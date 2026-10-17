@@ -71,6 +71,7 @@ def main(a, b):
         df = db.raw_sql(SQL, params={"start": start, "end": end})
         # drop the NULL buckets created by non-computer rows in the onet/parent sets
         df = df[~((df.gset == "onet") & df.swe_onet.isna()) & ~((df.gset == "parent") & df.swe_parent.isna())]
+        df = df.copy()
         df.insert(0, "month", str(m))  # string YYYY-MM: pandas 2.2.3 datetime ops segfault on Python 3.14 here
         df["seniority_label"] = df.seniority.map(SENIORITY)
         df.to_parquet(f, index=False)

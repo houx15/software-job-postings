@@ -1,0 +1,15 @@
+country,kw,1,2,3,4,5,6,7
+China,0 no keyword,848,2314,730,336,62,1,6
+China,1 intern/grad,95,40,28,4,3,2,0
+China,2 junior/entry,17,24,2,0,0,0,0
+China,3 senior,13,63,148,84,8,2,0
+China,4 manager/lead,21,109,294,253,34,0,0
+China,5 staff/principal,7,32,20,34,13,0,0
+China,6 director+,3,3,5,7,36,9,2
+United States,0 no keyword,2352,4987,1755,989,133,5,23
+United States,1 intern/grad,221,54,17,9,5,0,0
+United States,2 junior/entry,290,133,27,22,4,0,0
+United States,3 senior,65,445,1380,2408,224,0,0
+United States,4 manager/lead,42,865,1318,2691,867,14,1
+United States,5 staff/principal,5,168,349,900,684,26,0
+United States,6 director+,1,11,24,167,366,143,1
