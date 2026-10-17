@@ -25,8 +25,7 @@ LAST_FULL = "2026-08"   # 2026-09 is partial (data end 2026-09-06)
 files = sorted(glob.glob(os.path.join(HERE, "data", "agg", "*.parquet")))
 d = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
 d = d[d.month <= LAST_FULL]
-for c in ["n_posts", "seniority", "swe_parent"]:
-    d[c] = d[c].astype("float64")
+d = d.astype({"n_posts": "float64", "seniority": "float64", "swe_parent": "float64"})
 months = sorted(d.month.unique())
 print(f"{len(files)} month files, {months[0]}..{months[-1]}, {len(d):,} aggregate rows")
 
@@ -89,15 +88,16 @@ def share(df, levels):
     return (100 * h / g).unstack("country").reindex(months)
 non_staff = par[~par.parent_name.fillna("").str.contains(STAFFING)]
 out = {}
-fig, axes = plt.subplots(1, 2, figsize=(14, 4.8), sharey=False)
-for ax, (lev, name) in zip(axes, [([1], "Entry (level 1)"), ([1, 2], "Early career (levels 1+2)")]):
-    for c in COL:
+fig, axes = plt.subplots(2, 2, figsize=(14, 8), sharex=True)
+for j, (lev, name) in enumerate([([1], "Entry (level 1)"), ([1, 2], "Early career (levels 1+2)")]):
+    for i, c in enumerate(COL):
+        ax = axes[i, j]
         for df, ls, lab in [(onet, "-", "computer occ."), (onet[onet.swe_onet.isin(NARROW)], "--", "software (narrow)"),
                             (non_staff, ":", "computer occ. ex-staffing"), (occ2, "-.", "all occupations")]:
             s = share(df, lev)[c]; out[(name, c, lab)] = s
-            ax.plot(s.rolling(3, min_periods=1).mean().values, color=COL[c], ls=ls, lw=1.4 if ls == "-" else 1, label=f"{c}: {lab}")
-    ax.set_title(f"{name} share of postings, % (3-mo MA)", fontsize=10); xaxis(ax)
-axes[1].legend(fontsize=7, loc="center left", bbox_to_anchor=(1, .5))
+            ax.plot(s.rolling(3, min_periods=1).mean().values, color=COL[c], ls=ls, lw=1.6 if ls == "-" else 1.1, label=lab)
+        ax.set_title(f"{c}: {name} share of postings, % (3-mo MA)", fontsize=10); xaxis(ax)
+axes[0, 0].legend(fontsize=8)
 fig.tight_layout(); fig.savefig(os.path.join(FIG, "fig3_entry_share.png"), dpi=150); plt.close(fig)
 
 # ---- Fig 4: postings by seniority group, indexed to 2019 and 2022
