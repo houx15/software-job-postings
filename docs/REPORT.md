@@ -422,7 +422,7 @@ $$
 - Felten, E., Raj, M., & Seamans, R. AIOE, *Strategic Management Journal* 42(12) (2021)。**同行评审。** [doi](https://doi.org/10.1002/smj.3286)
 - Felten, Raj & Seamans. LM-AIOE, arXiv 2303.01157 (2023)。**预印本。** [arXiv](https://arxiv.org/abs/2303.01157)
 - Webb, M. "The Impact of Artificial Intelligence on the Labor Market." SSRN 3482150。**工作论文**（数据未公开，未使用）。[SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3482150)
-- Rambachan, A., & Roth, J. "A More Credible Approach to Parallel Trends." *Review of Economic Studies* (2023)。**同行评审。**
+- Rambachan, A., & Roth, J. (2023). "A More Credible Approach to Parallel Trends." *Review of Economic Studies*, 90(5), 2555–2591. [doi:10.1093/restud/rdad018](https://doi.org/10.1093/restud/rdad018)。**同行评审。**
 
 ## 附：代码与文档索引
 
