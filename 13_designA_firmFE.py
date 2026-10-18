@@ -20,10 +20,14 @@ import matplotlib.pyplot as plt
 HERE = os.path.dirname(os.path.abspath(__file__)); FIG = os.path.join(HERE, "figures"); OUT = os.path.join(HERE, "data", "firmFE")
 HD_PY = os.path.expanduser("~/.venvs/honestdid/bin/python")
 LAST_FULL_Q = "2026Q2"; REF = "2022Q3"; POST1 = "2023Q1"; POST2 = "2025Q3"; PRE_END = "2022Q3"
-MIN_CELL = int(os.environ.get("MIN_CELL", 5))
+MIN_CELL = int(os.environ.get("MIN_CELL", 10))   # 5 -> ~20M cells, too big for 16 GB RAM with event studies
 EXPO = pd.read_csv(os.path.join(HERE, "data", "exposure", "exposure_soc6.csv")).set_index("soc6")
 STAFF = set(pd.read_csv(os.path.join(HERE, "data", "staffing_rcids.csv")).rcid.astype("int64"))
 FE_MAIN = "rcid^q + soc6^q + soc6^sg + sg^q"
+# NB: in a balanced panel where every firm x occ x quarter has both seniority cells, f^t is orthogonal to Early x E x Post,
+# so it cannot move the triple-diff estimate. The substantive within-firm control is firm x seniority x quarter (FE_FST):
+# it absorbs any firm-specific shift in the junior/senior mix (e.g. a firm freezing junior hiring across all occupations).
+FE_FST = "rcid^sg^q + soc6^q + soc6^sg"
 LOG = []
 
 def log(s):
@@ -64,7 +68,10 @@ def cells(country="United States", srcs=("li_only", "other"), drop_staff=False, 
     g = pd.DataFrame({"rcid": pairs.rcid.to_numpy()[pid], "soc6": pairs.soc6.to_numpy()[pid], "sg": np.where(sgi == 0, "early", "exp"),
                       "qi": qi, "q": np.array(qs)[qi], "n": n})
     g["ly"] = np.log1p(g.n); g["early"] = 1 - sgi; g["E"] = g.soc6.map(z).astype(float)
-    g["post"] = (g.q >= POST1).astype(int); g["post2"] = (g.q >= POST2).astype(int); g["pid"] = pid
+    g["post"] = (g.q >= POST1).astype(np.int8); g["post2"] = (g.q >= POST2).astype(np.int8); g["pid"] = pid
+    g["early"] = g.early.astype(np.int8); g["qi"] = g.qi.astype(np.int16)
+    g["soc6"] = g.soc6.astype("category"); g["sg"] = g.sg.astype("category")
+    g["q"] = pd.Categorical(g.q, categories=qs, ordered=True)   # ordered -> string comparisons still work, low memory
     return g
 
 def desc(g, lab):
@@ -72,10 +79,14 @@ def desc(g, lab):
         f"{len(g):,} cells, {int(g.n.sum()):,} postings")
 
 def did(g, fe=FE_MAIN, vcov=None, extra_rhs=""):
-    g = g.copy(); g["T1"] = g.early * g.E * g.post; g["T2"] = g.early * g.E * g.post2
-    if extra_rhs: g["EP1"] = g.E * g.post; g["EP2"] = g.E * g.post2
-    m = pf.feols(f"ly ~ T1 + T2{extra_rhs} | {fe}", data=g, vcov=vcov or {"CRV1": "soc6"})
-    return m.tidy()
+    cols = ["ly", "rcid", "soc6", "sg", "q"]
+    h = g[cols].copy(); h["T1"] = g.early * g.E * g.post; h["T2"] = g.early * g.E * g.post2
+    if extra_rhs: h["EP1"] = g.E * g.post; h["EP2"] = g.E * g.post2
+    if "post2" in g and g.post2.max() == 0: h = h.drop(columns="T2")
+    rhs = "T1" + (" + T2" if "T2" in h else "")
+    m = pf.feols(f"ly ~ {rhs}{extra_rhs} | {fe}", data=h, vcov=vcov or {"CRV1": "soc6"})
+    t = m.tidy(); del m, h
+    return t
 
 def star(p): return "***" if p < .01 else "**" if p < .05 else "*" if p < .1 else ""
 def fmt(t, term):
@@ -83,11 +94,12 @@ def fmt(t, term):
     r = t.loc[term]; return f"{r['Estimate']:.3f}{star(r['Pr(>|t|)'])} ({r['Std. Error']:.3f})"
 
 def event(g, fe=FE_MAIN, ref=REF):
-    g = g.copy(); qs = sorted(g.q.unique()); names = []
+    qs = [str(q) for q in g.q.cat.categories if (g.q == q).any()]; names = []
+    h = g[["ly", "rcid", "soc6", "sg", "q"]].copy(); ee = (g.early * g.E).to_numpy()
     for q in qs:
         if q == ref: continue
-        nm = "k_" + q; g[nm] = (g.early * g.E * (g.q == q)).astype(float); names.append(nm)
-    m = pf.feols("ly ~ " + " + ".join(names) + f" | {fe}", data=g, vcov={"CRV1": "soc6"})
+        nm = "k_" + q; h[nm] = ee * (g.q == q).to_numpy(); names.append(nm)
+    m = pf.feols("ly ~ " + " + ".join(names) + f" | {fe}", data=h, vcov={"CRV1": "soc6"}); del h
     b = m.coef()[names].to_numpy(); V = pd.DataFrame(m._vcov, index=m._coefnames, columns=m._coefnames).loc[names, names].to_numpy()
     leads = [n for n in names if n[2:] < ref]
     R = np.zeros((len(leads), len(names)))
@@ -119,6 +131,29 @@ def own_bounds(b, V, npre, l, Mvec, Mbar):
         out.append(dict(method="RM", M=mb, point=th, se=se, id_lb=th - h, id_ub=th + h, ci_lb=th - h - 1.96 * se, ci_ub=th + h + 1.96 * se))
     return pd.DataFrame(out), G
 
+TARGETS = ["2023Q1", "avg 2023Q1-2026Q2", "avg 2025Q3-2026Q2"]
+def honest_figs(tag, hlab, sfx, hd_tabs):
+    sd_p = os.path.join(OUT, tag + "_sd.csv"); rm_p = os.path.join(OUT, tag + "_rm.csv"); own = hd_tabs[hlab][0]
+    fig, axs = plt.subplots(1, 3, figsize=(14, 4.5))
+    for ax, tg in zip(axs, TARGETS):
+        if os.path.exists(sd_p):
+            x = pd.read_csv(sd_p); x = x[(x.target == tg) & (x.restriction == "SD")]
+            ax.vlines(np.arange(len(x)), x.lb, x.ub, color="tab:blue", lw=3, label="HonestDiD SD FLCI (last-slope)")
+            ax.set_xticks(np.arange(len(x))); ax.set_xticklabels([f"{m:.3g}" for m in x.M])
+        o = own[(own.target == tg) & (own.method == "SD reg-slope")]
+        ax.vlines(np.arange(len(o)) + .2, o.ci_lb, o.ci_ub, color="tab:orange", lw=3, label="own, regression-slope extrapolation")
+        ax.axhline(0, color="k", lw=.6); ax.set_title(tg, fontsize=10); ax.set_xlabel("M (smoothness, log pts / quarter^2)")
+    axs[0].legend(fontsize=7); axs[0].set_ylabel("effect, log points per SD exposure")
+    fig.suptitle(f"Rambachan-Roth smoothness bounds, {hlab}; M = 0: pre-trend continues linearly", fontsize=10)
+    fig.tight_layout(); fig.savefig(os.path.join(FIG, f"designA_firmFE_2_honest_sd{sfx}.png"), dpi=150); plt.close(fig)
+    if os.path.exists(rm_p):
+        x = pd.read_csv(rm_p); fig, axs = plt.subplots(1, 3, figsize=(14, 4.2))
+        for ax, tg in zip(axs, TARGETS):
+            y = x[x.target == tg]; ax.vlines(y.Mbar, y.lb, y.ub, lw=4); ax.axhline(0, color="k", lw=.6); ax.set_title(tg, fontsize=10)
+            ax.set_xlabel("Mbar (post violation relative to max pre violation)")
+        fig.suptitle(f"Rambachan-Roth relative-magnitude bounds (C-LF 95%), {hlab}", fontsize=10)
+        fig.tight_layout(); fig.savefig(os.path.join(FIG, f"designA_firmFE_3_honest_rm{sfx}.png"), dpi=150); plt.close(fig)
+
 def main():
     os.makedirs(OUT, exist_ok=True); T0 = time.time()
     rows = []
@@ -138,6 +173,8 @@ def main():
     row("US LinkedIn-only postings", LI)
     XS = cells(drop_staff=True); desc(XS, "US ex staffing")
     row("Excluding staffing/outsourcing parents", XS)
+    row("US LinkedIn-only, firm x seniority x quarter FE", LI, fe=FE_FST)
+    row("Excluding staffing, firm x seniority x quarter FE", XS, fe=FE_FST)
     row("LinkedIn-only and excluding staffing", cells(srcs=("li_only",), drop_staff=True))
     row("Exposure = Felten LM-AIOE", cells(expo="felten_lm_aioe"))
     row("Larger cells (>= 20 pre postings per seniority group)", cells(min_cell=20))
@@ -145,6 +182,7 @@ def main():
     g = US.sort_values(["pid", "early", "qi"]).copy(); g["dy"] = g.ly - g.groupby(["pid", "early"]).ly.shift(4)
     g = g[g.qi >= 4].copy(); g["ly"] = g.dy
     row("Outcome = YoY log change (from 2022Q1)", g)
+    row("Outcome = YoY log change, firm x seniority x quarter FE", g, fe=FE_FST)
     # placebo in time: fake event 2022Q1, pre-period only
     g = US[US.q <= PRE_END].copy(); g["post"] = (g.q >= "2022Q1").astype(int); g["post2"] = 0
     g["T1"] = g.early * g.E * g.post
@@ -156,11 +194,13 @@ def main():
 
     # ---------- event studies
     ev, pre_tests = {}, []
-    for lab, g in [("US all sources, firm FE", US), ("US all sources, no firm FE", None), ("US LinkedIn-only, firm FE", LI),
+    for lab, g in [("US all sources, firm FE", US), ("US all sources, firm x sen x q FE", US), ("US all sources, no firm FE", None), ("US LinkedIn-only, firm FE", LI),
                    ("US ex staffing, firm FE", XS), ("China CN boards, firm FE", CN)]:
         t0 = time.time()
         if lab == "US all sources, no firm FE":
             t, b, V, npre, F, p = event(US, fe="soc6^q + soc6^sg + sg^q")
+        elif "sen x q" in lab:
+            t, b, V, npre, F, p = event(g, fe=FE_FST)
         else:
             t, b, V, npre, F, p = event(g)
         ev[lab] = (t, b, V, npre); pre_tests.append((lab, F, p, npre))
@@ -169,14 +209,15 @@ def main():
 
     # ---------- honest DiD on the main US event study and LinkedIn-only
     hd_tabs = {}
-    for lab in ["US all sources, firm FE", "US LinkedIn-only, firm FE"]:
+    TAGS = {"US all sources, firm FE": "hd_main", "US all sources, firm x sen x q FE": "hd_fst", "US LinkedIn-only, firm FE": "hd_li"}
+    for lab in TAGS:
         t, b, V, npre = ev[lab]; post_q = list(t.q[npre:]); npost = len(post_q)
         l1 = np.array([1.0 if q == POST1 else 0.0 for q in post_q])
         la = np.array([1.0 if q >= POST1 else 0.0 for q in post_q]); la /= la.sum()
         l2 = np.array([1.0 if q >= POST2 else 0.0 for q in post_q]); l2 /= l2.sum()
         sd2 = np.abs(np.diff(np.concatenate([b[:npre], [0.0]]), n=2)); Mmax = float(sd2.max())
         Mvec = [0.0] + [round(f * Mmax, 5) for f in (0.25, 0.5, 1.0)]; Mbar = [0.25, 0.5, 1.0, 1.5, 2.0]
-        tag = "hd_" + ("main" if lab.startswith("US all") else "li")
+        tag = TAGS[lab]
         npz = os.path.join(OUT, tag + ".npz")
         np.savez(npz, beta=b, sigma=V, npre=npre, npost=npost, lvecs=np.vstack([l1, la, l2]),
                  lnames=np.array(["2023Q1", "avg 2023Q1-2026Q2", "avg 2025Q3-2026Q2"]), Mvec=np.array(Mvec), Mbarvec=np.array(Mbar))
@@ -194,7 +235,7 @@ def main():
         f.write(f"<!-- generated by 13_designA_firmFE.py; MIN_CELL={MIN_CELL} -->\n\n")
         f.write("| Specification | Early x E x Post (2023Q1+) | Early x E x Post2 (2025Q3+) | firms | firm-occ pairs | cells |\n|---|---|---|---|---|---|\n")
         for r_ in rows: f.write(f"| {r_[0]} | {r_[1]} | {r_[2]} | {r_[3]:,} | {r_[4]:,} | {r_[5]:,} |\n")
-        f.write(f"\nEvent-study pre-trend tests (joint Wald on leads 2021Q1-2022Q2, ref {REF}):\n\n| Event study | F | p | leads |\n|---|---|---|---|\n")
+        f.write(f"\nEvent-study pre-trend tests (joint Wald on leads 2021Q1-2022Q2, ref {REF}):\n\n| Event study | Wald chi2 (pyfixest switches to chi2) | p | leads |\n|---|---|---|---|\n")
         for lab, F, p, k in pre_tests: f.write(f"| {lab} | {F:.2f} | {p:.4f} | {k} |\n")
         f.write("\nEvent-study coefficients (Early x E x quarter, SE clustered by occupation):\n\n| quarter | " + " | ".join(ev) + " |\n|---|" + "---|" * len(ev) + "\n")
         allq = sorted(set().union(*[set(v[0].q) for v in ev.values()]) | {REF})
@@ -205,7 +246,7 @@ def main():
                 cells_.append("0 (ref)" if q == REF else (f"{x.loc[q,'b']:.3f} ({x.loc[q,'se']:.3f})" if q in x.index else ""))
             f.write(f"| {q} | " + " | ".join(cells_) + " |\n")
         for lab, (own, Mvec, Mmax) in hd_tabs.items():
-            tag = "hd_" + ("main" if lab.startswith("US all") else "li")
+            tag = TAGS[lab]
             f.write(f"\n### Honest DiD, {lab}\n\nMax |2nd difference| of pre-period coefficients = {Mmax:.4f}.\n\n")
             for suf, nm in [("_sd.csv", "honestdid package, Delta^SD(M), FLCI 95%"), ("_rm.csv", "honestdid package, Delta^RM(Mbar), C-LF 95%")]:
                 p_ = os.path.join(OUT, tag + suf)
@@ -222,9 +263,9 @@ def main():
 
     # ---------- figures
     fig, ax = plt.subplots(figsize=(11, 5.5))
-    for i, lab in enumerate(["US all sources, firm FE", "US all sources, no firm FE", "US LinkedIn-only, firm FE", "US ex staffing, firm FE"]):
+    for i, lab in enumerate(["US all sources, firm FE", "US all sources, firm x sen x q FE", "US all sources, no firm FE", "US LinkedIn-only, firm FE", "US ex staffing, firm FE"]):
         t = ev[lab][0].copy(); t = pd.concat([t, pd.DataFrame({"q": [REF], "b": [0.0], "se": [0.0]})]).sort_values("q")
-        x = np.arange(len(t)) + (i - 1.5) * 0.12
+        x = np.arange(len(t)) + (i - 2) * 0.1
         ax.errorbar(x, t.b, yerr=1.96 * t.se, fmt="o-", ms=3.5, lw=1.2, capsize=2, label=lab)
     ax.set_xticks(np.arange(len(t))); ax.set_xticklabels(t.q, rotation=60, fontsize=8)
     ax.axhline(0, color="k", lw=.6); ax.axvline(list(t.q).index(REF), color="gray", ls=":", lw=1)
@@ -234,28 +275,8 @@ def main():
     ax.set_ylabel("log points per SD of exposure"); ax.legend(fontsize=8); fig.tight_layout()
     fig.savefig(os.path.join(FIG, "designA_firmFE_1_event_us.png"), dpi=150); plt.close(fig)
 
-    fig, axs = plt.subplots(1, 3, figsize=(14, 4.5))
-    tag = "hd_main"; sd_p = os.path.join(OUT, tag + "_sd.csv"); rm_p = os.path.join(OUT, tag + "_rm.csv")
-    own = hd_tabs["US all sources, firm FE"][0]
-    for ax, tg in zip(axs, ["2023Q1", "avg 2023Q1-2026Q2", "avg 2025Q3-2026Q2"]):
-        if os.path.exists(sd_p):
-            x = pd.read_csv(sd_p); x = x[(x.target == tg) & (x.restriction == "SD")]
-            ax.vlines(np.arange(len(x)), x.lb, x.ub, color="tab:blue", lw=3, label="HonestDiD SD FLCI")
-            ax.set_xticks(np.arange(len(x))); ax.set_xticklabels([f"{m:.3g}" for m in x.M])
-        o = own[(own.target == tg) & (own.method == "SD reg-slope")]
-        ax.vlines(np.arange(len(o)) + .2, o.ci_lb, o.ci_ub, color="tab:orange", lw=3, label="own, reg-slope extrapolation")
-        ax.axhline(0, color="k", lw=.6); ax.set_title(tg, fontsize=10); ax.set_xlabel("M (smoothness, log pts / quarter^2)")
-    axs[0].legend(fontsize=7); axs[0].set_ylabel("effect, log points per SD exposure")
-    fig.suptitle("Rambachan-Roth bounds: US all sources, firm FE; M = 0 means the pre-trend continues linearly", fontsize=10)
-    fig.tight_layout(); fig.savefig(os.path.join(FIG, "designA_firmFE_2_honest_sd.png"), dpi=150); plt.close(fig)
-
-    if os.path.exists(rm_p):
-        x = pd.read_csv(rm_p); fig, axs = plt.subplots(1, 3, figsize=(14, 4.2))
-        for ax, tg in zip(axs, ["2023Q1", "avg 2023Q1-2026Q2", "avg 2025Q3-2026Q2"]):
-            y = x[x.target == tg]; ax.vlines(y.Mbar, y.lb, y.ub, lw=4); ax.axhline(0, color="k", lw=.6); ax.set_title(tg, fontsize=10)
-            ax.set_xlabel("Mbar (post violation relative to max pre violation)")
-        fig.suptitle("Rambachan-Roth relative-magnitude bounds (C-LF 95%), US all sources, firm FE", fontsize=10)
-        fig.tight_layout(); fig.savefig(os.path.join(FIG, "designA_firmFE_3_honest_rm.png"), dpi=150); plt.close(fig)
+    for tag, hlab, sfx in [("hd_main", "US all sources, firm FE", ""), ("hd_fst", "US all sources, firm x sen x q FE", "_fst")]:
+        honest_figs(tag, hlab, sfx, hd_tabs)
 
     t = ev["China CN boards, firm FE"][0]; t = pd.concat([t, pd.DataFrame({"q": [REF], "b": [0.0], "se": [0.0]})]).sort_values("q")
     fig, ax = plt.subplots(figsize=(10, 4.5)); ax.errorbar(np.arange(len(t)), t.b, yerr=1.96 * t.se, fmt="o-", ms=3.5, capsize=2, color="tab:red")
