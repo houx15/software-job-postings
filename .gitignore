@@ -1,7 +1,29 @@
+# --- Data: never commit (WRDS license). Keep all data under data/ ---
 data/
-*.parquet
 logs/
-__pycache__/
-.venv/
-docs/*.csv
+outputs/
+*.parquet
+*.feather
+*.pkl
+*.pickle
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.dta
+*.sav
+*.h5
+*.db
+*.sqlite
+*.zip
+*.gz
+# exceptions: small hand-written, non-WRDS reference tables
 !docs/ai_events.csv
+
+# --- Environment / OS ---
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+.env
