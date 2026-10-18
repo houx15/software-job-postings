@@ -36,7 +36,12 @@ date,event,label,category,major,source_url,note
 2025-10-29,Cursor 2.0 + Composer model,,coding_tool,0,https://cursor.com/blog/2-0,multi-agent interface
 2025-11-18,Gemini 3 + Google Antigravity,,frontier_model,0,https://blog.google/products-and-platforms/products/gemini/gemini-3/,
 2025-11-24,Claude Opus 4.5,,frontier_model,0,https://www.anthropic.com/news/claude-opus-4-5,
+2025-11-24,Warelay/Clawd (later Clawdbot -> OpenClaw) first published by Peter Steinberger,,coding_tool,0,https://en.wikipedia.org/wiki/OpenClaw,lore.md: Clawd from 2025-11-25; renamed Clawdbot 2026-01-02 (Wikipedia)
+2026-01-27,Clawdbot renamed Moltbot after Anthropic trademark request,,coding_tool,0,https://github.com/openclaw/openclaw/commit/6d16a658e5ebe6ce15856565a47090d5b9d5dfb6,rename commit 2026-01-27T12:19Z; Moltbook agent social network launched 2026-01-28
+2026-01-30,"OpenClaw rename + viral peak (100k+ GitHub stars, 2M visitors/week)",OpenClaw,coding_tool,1,https://openclaw.ai/blog/introducing-openclaw,blog post dated Jan 29; migration 2026-01-30 04:00 GMT (docs/start/lore.md); TechCrunch 2026-01-30
 2026-02-05,Claude Opus 4.6,,frontier_model,0,https://www.anthropic.com/news/claude-opus-4-6,
+2026-02-15,OpenClaw creator Steinberger joins OpenAI; project moves to a foundation,,coding_tool,0,https://www.reuters.com/business/openclaw-founder-steinberger-joins-openai-open-source-bot-becomes-foundation-2026-02-15/,also https://steipete.me/posts/2026/openclaw
+2026-03-09,"China 'yang longxia' (OpenClaw) wave: Tencent WorkBuddy/QClaw, ByteDance ArkClaw launch",CN 养龙虾,china,1,https://news.qq.com/rain/a/20260310A05J1400,"local subsidies (Longgang 3/7, Wuxi/Changshu 3/9, Hefei 3/10); Zhipu AutoClaw 3/10; CNCERT-type security warnings 3/13 (thepaper.cn newsDetail_forward_32749590)"
 2026-04-24,DeepSeek-V4 preview,,china,0,https://api-docs.deepseek.com/news/news260424,
 2026-07-24,Claude Opus 5,,frontier_model,0,https://www.anthropic.com/news/claude-opus-5,
 2026-09-03,GPT-6 Astra,GPT-6,frontier_model,1,https://openai.com/index/gpt-6-astra/,limited rollout first

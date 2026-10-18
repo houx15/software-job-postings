@@ -61,7 +61,7 @@ def overlay(ax, show_labels):
         c = CAT_COL[e.category]
         ax.axvline(e.x, color=c, ls="--", lw=.9, alpha=.75)
         if show_labels:
-            ax.text(e.x, ymax - (0.04 + 0.055 * (i % 4)) * rng, " " + e.label, fontsize=7, color=c, ha="left", va="center",
+            ax.text(e.x, ymax - (0.04 + 0.05 * (i % 5)) * rng, " " + e.label, fontsize=7, color=c, ha="left", va="center",
                     bbox=dict(facecolor="white", edgecolor="none", alpha=.8, pad=.5))
     for _, e in ev[ev.major == 0].iterrows():
         ax.plot([e.x, e.x], [ymin, ymin + 0.035 * rng], color=CAT_COL[e.category], lw=1.2, alpha=.9)
