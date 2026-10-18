@@ -5,7 +5,7 @@ source group (mutually exclusive):
   li_plus   : source_linkedin plus at least one other source
   cn_board  : zhaopin / 51job / liepin, no LinkedIn
   other     : everything else (company sites, Indeed, aggregators, staffing boards ...)
-staffing : ultimate_parent_rcid in tools/staffing_rcids.csv (parents whose name matches the staffing/outsourcing regex of 02/08 and
+staffing : ultimate_parent_rcid in data/staffing_rcids.csv (git-ignored; built from data/agg parent names) (parents whose name matches the staffing/outsourcing regex of 02/08 and
            with >=100 computer-occupation postings 2020-2026 in data/agg; 890 parents) or source_staffingfirms.
            (A per-row name regex made each month take ~330 s; the rcid hash join is much cheaper.)
 Usage: uv run python 09_occ_panel_pull.py 2021-01 2026-09
@@ -40,7 +40,7 @@ select country, onet_code, seniority,
 from b group by 1, 2, 3, 4, 5
 """
 
-RCIDS = [int(x) for x in pd.read_csv(os.path.join(HERE, "tools", "staffing_rcids.csv")).rcid]
+RCIDS = [int(x) for x in pd.read_csv(os.path.join(HERE, "data", "staffing_rcids.csv")).rcid]
 
 def data_bytes():
     return sum(os.path.getsize(os.path.join(r, f)) for r, _, fs in os.walk(os.path.join(HERE, "data")) for f in fs)
