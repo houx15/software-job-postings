@@ -12,6 +12,9 @@ WRDS data stay on this machine: `data/` and `*.parquet` are git-ignored. Only co
 | `06_source_pull.py` | source-flag composition (LinkedIn / Zhaopin / 51job / Liepin / Indeed / company sites …), month x country x seniority, full count → `data/sources/` |
 | `07_title_kw_pull.py` | title keywords (intern/junior/senior+) x Revelio seniority, sampled → `data/titlekw/` (seniority-model check) |
 | `08_rebound_diagnosis.py` | early-career share dip/rebound decomposition (numerator/denominator, source shift-share, big posters, seasonality) → `figures/rebound_*.png`, `docs/rebound_diagnosis.md` |
+| `09_occ_panel_pull.py` | P1: all occupations, month x country x O*NET x seniority x source group x staffing → `data/occ_panel/` |
+| `tools/build_exposure.py` | public AI-exposure measures (Eloundou, Felten) crosswalked to SOC-2018 6-digit; see `docs/exposure.md` |
+| `10_designA.py` | Design A triple-difference + event study (pyfixest); results in `docs/designA_results.md` |
 | `docs/did_design.md` | DiD / event-study design memo for AI and early-career software hiring |
 | `docs/schema.md` | table schemas, access, seniority coding and validation, caveats |
 | `tools/` | `db.py` (connection via ~/.pgpass), schema/seniority probes |
