@@ -7,6 +7,8 @@ WRDS data stay on this machine: `data/` and `*.parquet` are git-ignored. Only co
 |---|---|
 | `01_swe_by_seniority.py` | server-side GROUPING SETS pull, one month per query -> `data/agg/YYYY-MM.parquet` (resumable, 5 GB guard) |
 | `02_descriptive.py` | figures -> `figures/`, yearly summary -> `data/summary/` |
+| `03_stack_language_tags.py` / `04_stack_figures.py` | stack & language regex tags (sampled, server-side) and figures; see `docs/stack_tags.md` |
+| `05_event_overlay.py` | AI-coding/LLM milestones (`docs/ai_events.csv`, sourced) overlaid on quarterly series + before/after table (descriptive) |
 | `docs/schema.md` | table schemas, access, seniority coding and validation, caveats |
 | `tools/` | `db.py` (connection via ~/.pgpass), schema/seniority probes |
 

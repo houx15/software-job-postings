@@ -1,0 +1,43 @@
+date,event,label,category,major,source_url,note
+2021-06-29,GitHub Copilot technical preview,Copilot preview,coding_tool,1,https://github.blog/news-insights/product-news/introducing-github-copilot-ai-pair-programmer/,powered by OpenAI Codex
+2021-08-10,OpenAI Codex model (API private beta),,frontier_model,0,https://openai.com/index/openai-codex/,
+2022-06-21,GitHub Copilot generally available,Copilot GA,coding_tool,1,https://github.blog/news-insights/product-news/github-copilot-is-generally-available-to-all-developers/,$10/month individuals
+2022-11-30,ChatGPT launch,ChatGPT,frontier_model,1,https://openai.com/index/chatgpt/,GPT-3.5 research preview
+2023-03-14,GPT-4,GPT-4,frontier_model,1,https://openai.com/index/gpt-4-research/,
+2023-03-22,GitHub Copilot X / Copilot Chat preview,,coding_tool,0,https://techcrunch.com/2023/03/22/githubs-copilot-goes-beyond-code-completion-adds-a-chat-mode-and-more/,GitHub blog post same day
+2023-04-06,Cursor 0.2.0 (VS Code fork; first official changelog),,coding_tool,0,https://cursor.com/changelog/0-2-0,first public release ~2023-03 per secondary sources
+2023-10-10,Kimi Chat (Moonshot AI) closed beta,,china,0,https://news.sina.com.cn/sx/2023-10-10/detail-imzqrauh8170133.shtml,date = report date; public opening Nov 2023
+2023-10-24,Baidu Comate (文心快码) SaaS fully open,,china,0,https://cloud.baidu.com/news/news_37437e5c-e1fd-4881-bd26-fc4b87214ca5,invite test from 2023-06-06
+2023-10-31,Alibaba Tongyi Lingma (通义灵码) launch,,china,0,https://developer.aliyun.com/article/1363818,Apsara Conference; public beta
+2023-12-29,GitHub Copilot Chat generally available,,coding_tool,0,https://github.blog/news-insights/product-news/github-copilot-chat-now-generally-available-for-organizations-and-individuals/,
+2024-03-04,Claude 3 family,,frontier_model,0,https://www.anthropic.com/news/claude-3-family,
+2024-03-12,Devin (Cognition) announced,,coding_tool,0,https://cognition.com/blog/introducing-devin,first 'AI software engineer' agent
+2024-05-13,GPT-4o,,frontier_model,0,https://openai.com/index/hello-gpt-4o/,
+2024-06-20,Claude 3.5 Sonnet,Claude 3.5 Sonnet,frontier_model,1,https://www.anthropic.com/news/claude-3-5-sonnet,large jump in coding ability
+2024-09-12,OpenAI o1-preview (reasoning models),,frontier_model,0,https://openai.com/index/introducing-openai-o1-preview/,
+2024-11-12,Qwen2.5-Coder-32B,,china,0,https://qwenlm.github.io/blog/qwen2.5-coder-family/,
+2024-11-13,Windsurf Editor (Codeium) launch,,coding_tool,0,https://devin.ai/blog/windsurf-launch,agentic IDE (Cascade)
+2024-11-24,Cursor 0.43: Composer agent,,coding_tool,0,https://cursor.com/changelog/0-43-x,
+2024-12-26,DeepSeek-V3,,china,0,https://api-docs.deepseek.com/updates/,
+2025-01-19,Trae (ByteDance) AI IDE overseas launch,,china,0,https://news.qq.com/rain/a/20250120A06YSV00,China version 2025-03-03 (https://www.ithome.com/0/834/902.htm)
+2025-01-20,DeepSeek-R1,DeepSeek-R1,china,1,https://api-docs.deepseek.com/news/news250120/,
+2025-02-19,Cursor 0.46: Agent becomes default,,coding_tool,0,https://cursor.com/changelog/0-46-x,
+2025-02-24,Claude 3.7 Sonnet + Claude Code research preview,Claude Code preview,coding_tool,1,https://www.anthropic.com/research/claude-3-7-sonnet,'Cloud Code' = Claude Code
+2025-03-25,Gemini 2.5 Pro,,frontier_model,0,https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-model-thinking-updates-march-2025/,
+2025-04-16,OpenAI o3/o4-mini + Codex CLI,,coding_tool,0,https://openai.com/index/introducing-o3-and-o4-mini/,Codex CLI: https://techcrunch.com/2025/04/16/openai-debuts-codex-cli-an-open-source-coding-tool-for-terminals/
+2025-05-16,OpenAI Codex cloud agent (research preview),,coding_tool,0,https://openai.com/index/introducing-codex/,codex-1
+2025-05-22,Claude 4 + Claude Code generally available,Claude Code GA,coding_tool,1,https://www.anthropic.com/research/claude-4,
+2025-06-04,Cursor 1.0 (BugBot; Background Agent for all),,coding_tool,0,https://cursor.com/changelog/1-0,
+2025-07-11,Kimi K2 open-source (Moonshot),,china,0,https://www.kimi.ai/blog/kimi-k2,
+2025-07-22,Qwen3-Coder,,china,0,https://qwenlm.github.io/blog/qwen3-coder/,
+2025-08-07,GPT-5,GPT-5,frontier_model,1,https://openai.com/index/introducing-gpt-5/,date per OpenAI release notes https://help.openai.com/en/articles/9624314-model-release-notes
+2025-09-15,GPT-5-Codex,,coding_tool,0,https://www.agenticcodingweekly.com/p/2025-agentic-coding-milestones,secondary source
+2025-09-29,Claude Sonnet 4.5,,frontier_model,0,https://www.anthropic.com/news/claude-sonnet-4-5,
+2025-10-29,Cursor 2.0 + Composer model,,coding_tool,0,https://cursor.com/blog/2-0,multi-agent interface
+2025-11-18,Gemini 3 + Google Antigravity,,frontier_model,0,https://blog.google/products-and-platforms/products/gemini/gemini-3/,
+2025-11-24,Claude Opus 4.5,,frontier_model,0,https://www.anthropic.com/news/claude-opus-4-5,
+2026-02-05,Claude Opus 4.6,,frontier_model,0,https://www.anthropic.com/news/claude-opus-4-6,
+2026-04-24,DeepSeek-V4 preview,,china,0,https://api-docs.deepseek.com/news/news260424,
+2026-07-24,Claude Opus 5,,frontier_model,0,https://www.anthropic.com/news/claude-opus-5,
+2026-09-03,GPT-6 Astra,GPT-6,frontier_model,1,https://openai.com/index/gpt-6-astra/,limited rollout first
+2026-09-30,Gemini 4 Argon,,frontier_model,0,https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/,limited release
