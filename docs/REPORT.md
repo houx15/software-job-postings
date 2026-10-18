@@ -19,10 +19,15 @@
 在分析之前，公共讨论中流行的叙事可以整理为以下可检验假设：
 
 - **H1（"软件工程已死"）。** ChatGPT 之后，软件工程岗位招聘总量持续、显著下降。
-- **H2（初级岗位挤压）。** AI 主要替代初级工作任务，因此初级岗位占比下降，且在 AI 暴露度高的职业中下降更多。这一叙事与 Brynjolfsson, Chandar & Chen 的"矿井中的金丝雀"发现相呼应。
+- **H2（初级岗位挤压）。** AI 主要替代初级工作任务，因此初级岗位占比下降，且在 AI 暴露度高的职业中下降更多。这一叙事与 Brynjolfsson, Chandar & Chen（2025）的"矿井中的金丝雀"发现相呼应。
 - **H3（全栈化与 AI 化）。** 雇主更倾向于招聘全栈或 AI 方向的工程师，前端、后端等细分岗位和移动端、桌面端岗位收缩。LLM 相关技能要求快速扩散。
 - **H4（事件冲击）。** 主要 AI 产品节点会在招聘数据中留下可见的断点，包括 Copilot、ChatGPT、Claude Code 和 2026 年的 OpenClaw 及中国"养龙虾"热潮。
 - **H5（中美差异）。** 中国市场受 AI 工具冲击的模式与美国不同。
+
+**相关实证文献（数值均核对自原文，版本见参考文献）。**
+- **资历偏向的证据。** Brynjolfsson, Chandar & Chen（2025）使用 ADP 薪资数据，发现 AI 暴露职业中 22–25 岁劳动者的就业相对下降：2025 年 8 月版控制企业层面冲击的回归估计为相对下降 13%（基于 2025 年 7 月数据）；2026 年 8 月更新版改以描述性"同步增长缺口"为主，至 2026 年 6 月为 19%（2026 版第 3 页）。Hosseini Maasoum & Lichtinger（2025，下称 HL）使用简历数据，发现 2023Q1 起生成式 AI 采用公司的初级就业相对非采用公司下降，六个季度后 DiD 估计为 7.7%，三重差分约 10%（2025-10-06 版第 2–3 页）。
+- **招聘端的证据。** Westby, Modestino & Cheng（2026）使用 Lightcast 招聘数据，以"要求 ≤3 年经验"为初级、"≥4 年"为资深，估计 ChatGPT 之后初级相对资深软件开发者岗位下降 14–15%（摘要；表 1 系数 −0.151 至 −0.167）。Liu, Wang & Yu（2025）使用 2.85 亿条 Lightcast 招聘，发现 AI 替代分数高于中位数的职业招聘相对下降 12%，对学历和经验要求都不高的入门岗位降幅更大（18%、20%；摘要）。
+- **总体效应温和或为零的证据。** Hampole, Papanikolaou, Schmidt & Seegmiller（2025）发现，AI 暴露度高的任务随后劳动需求下降，但被 AI 采用公司的生产率效应抵消，总体就业效应温和（摘要）。Humlum & Vestergaard（2025）以丹麦行政数据估计出收入与工时上的精确零效应，排除了 ChatGPT 发布两年后大于 2% 的效应（摘要）。
 
 下文按"描述 → 诊断 → 因果设计 → 设计诊断"的顺序逐层检验这些假设。每一层先给出方法，再给出结果，并说明它为下一层分析提出了什么要求。
 
@@ -30,26 +35,26 @@
 
 ### 3.1 招聘数据：Revelio COSMOS
 
-**来源与规模。** WRDS 上的 `revelio.postings_cosmos` 是去重后的招聘帖，约 29.2 亿行。字段包括职业代码（O*NET-SOC 2019，8 位）、资历（seniority）、公司（`ultimate_parent_rcid`）、发布日期以及来源标记。来源标记包括 LinkedIn、Indeed、公司官网、Zhaopin、51job、Liepin、聚合网站和外包/派遣公司。全文（标题与职位描述）在 `postings_cosmos_raw` 中，可按 job_id 连接。所有聚合均在 WRDS 服务器端按月完成，本地只保存计数。
+**来源与规模。** WRDS 上的 `revelio.postings_cosmos` 是 Revelio 跨来源统一并去重后的招聘帖，约 29.2 亿行。据 Revelio 方法说明，去重分两步：先归一化标题、公司、地点以缩小比较范围，再对时间上重叠的帖子计算两两相似度，超过阈值即视为重复（Revelio Labs, n.d.-a，"Unifying Job Postings"）。字段包括职业代码（O*NET-SOC 2019，8 位）、资历（seniority）、公司（`ultimate_parent_rcid`）、发布日期以及来源标记。来源标记包括 LinkedIn、Indeed、公司官网、Zhaopin、51job、Liepin、聚合网站和外包/派遣公司。全文（标题与职位描述）在 `postings_cosmos_raw` 中，可按 job_id 连接。所有聚合均在 WRDS 服务器端按月完成，本地只保存计数。
 
-**资历定义。** Revelio 的资历是根据职位标题、公司和行业由模型预测的 1–7 级序数变量：
+**资历定义。** `seniority` 是 Revelio 预测的 1–7 级序数变量。据 Revelio 方法说明（Revelio Labs, n.d.-a，"Seniority"），资历由集成模型生成：(i) 依据当前职位的标题、公司与行业给出第一个得分；(ii) 依据履历（此前任职的时长与资历）给出第二个得分；(iii) 依据年龄给出第三个得分。三者取平均得到连续资历值，再以带有 "junior""senior""director" 等可识别关键词的样本为锚点，映射到最可能的序数等级。数据字典对招聘帖只写 "Predicted seniority with 7 discrete levels"（Revelio Labs, n.d.-b，"Job Postings"），没有说明招聘帖使用哪些输入。招聘帖没有个人履历与年龄，我们据此推断招聘帖资历主要依据标题、公司与行业；**这一点是推断，未经 Revelio 文档确认。** 官方等级名称与示例标题如下（Revelio Labs, n.d.-a；n.d.-c，FAQ）：
 
-| 代码 | 含义 |
-|---|---|
-| 1 | 入门 / 实习 |
-| 2 | 初级 |
-| 3 | 助理 / 分析师 |
-| 4 | 经理 |
-| 5 | 总监 |
-| 6 | 高管 |
-| 7 | 高级高管 |
+| 代码 | Revelio 名称 | 官方示例标题 |
+|---|---|---|
+| 1 | Entry Level / Intern（入门 / 实习） | Accounting Intern；Software Engineer Trainee；Paralegal |
+| 2 | Junior Level（初级） | Account Receivable Bookkeeper；Junior Software QA Engineer；Legal Adviser |
+| 3 | Associate / Analyst Level（助理 / 分析师） | Senior Tax Accountant；Lead Electrical Engineer；Attorney |
+| 4 | Manager Level（经理） | Account Manager；Superintendent Engineer；Lead Lawyer |
+| 5 | Director Level（总监） | Chief of Accountants；VP Network Engineering；Head of Legal |
+| 6 | Executive Level（高管） | Managing Director, Treasury；Director of Engineering, Backend Systems |
+| 7 | Senior Executive Level（高级高管） | CFO；COO；CEO |
 
-在科技行业，第 4 级多为资深个人贡献者，而非人员管理者。本文定义**初级 = 1–2 级**，**资深 = 3–4 级**，5–7 级不纳入。
+Revelio 同时说明，视公司与职位特征，上述标题也可能落在略高或略低的等级。值得注意的是，官方示例把带 "Senior""Lead" 的标题放在 3 级。Revelio 把 4 级称为 Manager Level；但本仓库对 2024-03-05 单日标题关键词的检查（`docs/schema.md`）显示，美国带 senior 的标题多落在 4 级（2,408 条）与 3 级（1,380 条），staff/principal 多在 4–5 级。因此在科技岗位中，4 级更接近资深个人贡献者，而非人员管理者（本仓库观察，非 Revelio 定义）。本文定义**初级 = 1–2 级**，**资深 = 3–4 级**，5–7 级不纳入。
 
 **覆盖与来源。**
-- **覆盖扩张。** COSMOS 的覆盖在 2021 年急剧扩大，计数增长 4–8 倍，因此 2021 年前的水平不可比；主要分析使用 2021 年及以后的数据。
+- **覆盖扩张。** COSMOS 的覆盖在 2021 年急剧扩大，计数增长 4–8 倍，因此 2021 年前的水平不可比；主要分析使用 2021 年及以后的数据。这与 Revelio 的说明一致：各来源的招聘数据起始时间不同（最早 2016 年），统一的 COSMOS 数据集自 2021 年开始（Revelio Labs, n.d.-c）。
 - **美国来源构成（2024 年 3 月，计算机职业，标记可重叠）。** LinkedIn 74%，公司官网 16%，Indeed 16%，外包公司 8%。
-- **中国覆盖。** 仅包括 LinkedIn、Zhaopin、Liepin、51job，不含 Boss 直聘和拉勾。LinkedIn 中国求职应用 InCareer 于 2023-08-09 关停（[LinkedIn Help](https://www.linkedin.com/help/linkedin/answer/a534125)）。国内招聘网站自 2025Q4 起从数据中消失。
+- **中国覆盖。** 仅包括 LinkedIn、Zhaopin、Liepin、51job，不含 Boss 直聘和拉勾。LinkedIn 中国求职应用 InCareer 于 2023-08-09 关停（LinkedIn, 2023）。国内招聘网站自 2025Q4 起从数据中消失。
 - **薪资。** 美国约 85–90%、中国约 55% 的计算机职业薪资为模型预测值。
 
 **本文构建的面板。**
@@ -64,15 +69,15 @@ P2 的公司样本为基期（2021-01..2022-10）招聘量不少于 50 条的公
 
 ### 3.2 履历数据：Revelio `individual_positions`
 
-**来源与规模。** 该表来自 LinkedIn 式的个人履历，记录每段任职的起始日期、职业、资历、公司及抽样权重（`weight`，用于校正 LinkedIn 覆盖的职业与地区偏差）。本文把"职位开始"定义为**入职（hire）流量**：美国 2019–2026 年共 1.63 亿条。
+**来源与规模。** 该表来自公开的在线职业档案（以 LinkedIn 为主），每行为档案中的一段任职，记录起始日期（"Position start date if reported, null otherwise"）、职业、资历、公司及在档案中的先后顺序 `position_number`（Revelio Labs, n.d.-b，"Individual Profile Data"）。抽样权重 `weight` 用于校正在线档案在职业与国家上的代表性偏差：Revelio 按职业×国家估计劳动者拥有在线档案的概率，以其倒数为权重，例如有档案概率为 90% 的美国工程师权重约为 1.1（Revelio Labs, n.d.-a，"Sampling Weights"）。WRDS 版 `individual_positions` 中 `weight` 字段的具体口径未见于公开字典，此处按方法页理解。本文把"职位开始"定义为**入职（hire）流量**：美国 2019–2026 年共 1.63 亿条。
 
 **测量问题。**
-- **更新滞后。** 个人更新履历存在滞后，最近几个季度被低估：2025Q4 约为 2025Q3 的一半。因此结果分析截至 2025Q4。
-- **资历仍为模型预测。** 但履历资历可利用职业经历，理论上比招聘帖标签更稳定。
+- **更新滞后。** 个人更新履历存在滞后，最近几个季度被低估：2025Q4 约为 2025Q3 的一半。因此结果分析截至 2025Q4。Revelio 对其聚合流量产品用 nowcasting 模型修正这一滞后（Revelio Labs, n.d.-a，"Lags in Reporting"）；本文直接使用原始任职记录，未经该修正。
+- **资历仍为模型预测。** 但据 Revelio 方法说明，履历资历的集成模型可利用此前任职与年龄信息（见 3.1），理论上比招聘帖标签信息更多。
 
 ### 3.3 职业 AI 暴露度（概述）
 
-主度量为 Eloundou et al. 的 β（GPT-4 评分），在职业间标准化后记为 $E_o$。稳健性度量为 Felten 的 AIOE、LM-AIOE 与图像生成 AIOE。Webb 的专利度量没有公开数据，以"时间安慰剂"检验替代。各度量的构造、覆盖率与相关性见 3.4.1。
+主度量为 Eloundou, Manning, Mishkin & Rock（2023, 2024）的 β（GPT-4 评分），在职业间标准化后记为 $E_o$。稳健性度量为 Felten, Raj & Seamans 的 AIOE（2021）、LM-AIOE（2023a）与图像生成 AIOE（2023b）。Webb（2019）以专利文本与任务描述的重叠度量暴露度；本文未找到作者发布的职业层面数据，因此未使用（是否存在官方数据发布未能核实），改以"时间安慰剂"检验处理前 LLM 时代的暴露梯度。各度量的构造、覆盖率与相关性见 3.4.1。
 
 ### 3.4 变量定义与测量
 
@@ -80,23 +85,37 @@ P2 的公司样本为基期（2021-01..2022-10）招聘量不少于 50 条的公
 
 #### 3.4.1 AI 暴露度 $E_o$
 
-**Eloundou et al. β**（`tools/build_exposure.py`，数据为 `openai/GPTs-are-GPTs` 的 `occ_level.csv`）。
+**Eloundou et al. β**（`tools/build_exposure.py`，数据为 `openai/GPTs-are-GPTs` 仓库的 `occ_level.csv`；OpenAI, n.d.）。以下定义核对自 arXiv v5（Eloundou et al., 2023，2023-08-21 版）。*Science* 版（Eloundou et al., 2024，第 1306–1308 页）为精简版，摘要报告的框架与结论一致；量表与聚合细节本文以 arXiv v5 为准，未逐页核对 *Science* 版补充材料。
 
-- **任务层面的标注规则。** 原文以"在质量相当的前提下，LLM 能否把完成某一 O*NET 任务或详细工作活动（DWA）所需时间减少至少 50%"为阈值，把每项任务标为三类：
-  - **E0（无暴露）**：时间几乎不减少，或质量下降；
-  - **E1（直接暴露）**：仅通过 ChatGPT 或 OpenAI Playground 即可节省至少 50% 的时间；
-  - **E2（LLM+ 暴露）**：LLM 本身不足以达到阈值，但在其上开发额外软件即可达到；图像能力原单独标为 E3，分析时并入 E2。
-- **三个汇总指标。** $\alpha=E1$（下界），$\beta=E1+0.5\,E2$，$\zeta=E1+E2$（上界）。仓库列名中的 `gamma` 即原文的 $\zeta$。
-- **任务→职业聚合。** 有 DWA 标注时，先由 DWA 聚合到任务，再聚合到职业。职业层面以核心任务（core）权重为补充任务（supplemental）的 2 倍，权重和为 1。因此 β 可理解为"职业内被暴露任务的加权比例"，取值范围为 [0, 1]。这一聚合规则引自原文（arXiv 2303.10130，表 2 注释），本仓库直接使用作者发布的职业层面数值，未重新聚合。
-- **评分者版本。** 主度量使用 GPT-4 评分版（`dv_rating_beta` → `eloundou_beta_gpt4`），人工评分版（`human_rating_beta`）作稳健性检验。
+- **任务层面的标注规则**（arXiv v5 第 7 页 "Summary of exposure rubric"；完整量表见附录 A.1）。以"在质量相当的前提下，LLM 能否把完成某一 O*NET 任务或详细工作活动（DWA）所需时间减少至少 50%"为阈值；"质量相当"指第三方（通常是产出的接收者）不会注意到或不在意 LLM 的协助。每项任务标为三类：
+  - **E0（无暴露）**：所需时间没有减少或减少很少，或使用后产出质量下降；
+  - **E1（直接暴露）**：仅通过 ChatGPT 或 OpenAI Playground 使用该 LLM，即可把所需时间减少至少一半；
+  - **E2（LLM+ 暴露）**：仅用 LLM 达不到上述阈值，但在其上开发额外软件即可在保证质量的前提下达到；图像生成系统计入此类。标注时图像能力单独记为 E3，所有分析中并入 E2（第 7 页脚注 b）。
+- **三个汇总指标**（第 8–9 页）。$\alpha=E1$（暴露任务比例的下界），$\beta=E1+0.5\,E2$（E2 取 0.5 权重，以反映借助配套工具部署还需额外投入），$\zeta=E1+E2$（上界）。仓库 README 说明列名后缀 `_alpha`、`_beta`、`_gamma` 分别为 E1、E1+0.5·E2、E1+E2，因此 `gamma` 即原文的 $\zeta$。
+- **任务→职业聚合。**
+  - 人工评分：对全部 DWA 和部分任务标注；有 DWA 标注时，先由 DWA 聚合到任务，再聚合到职业（第 7–8 页）。
+  - GPT-4 评分：对全部"任务-职业"对直接标注，不经 DWA（第 8 页）。
+  - 职业层面以 O*NET 核心任务（core）权重为补充任务（supplemental）的 2 倍，职业内权重和为 1（表 2 注，第 8 页；图 2 注，第 10 页）。因此 β 是"职业内被暴露任务的加权比例"，取值于 [0, 1]。本仓库直接使用作者发布的职业层面数值，未重新聚合。
+  - 原文使用 O*NET 27.2 数据库（1,016 个职业，第 6 页）。
+- **评分者版本。** 原文表 2 注写明 "In the paper we use GPT-4, Rubric 1"，GPT-4 为"早期版本"，所用提示词相对人工量表略有修改（第 8 页）；但原文同时说明正文以人工标注为主要结果（第 9 页）。仓库 README 只说明 `dv_rating` 为 GPT-4 评分、`human` 为人工评分，未注明 rubric 版本，我们推定其为 Rubric 1（**未核实**）。本文以 GPT-4 版（`dv_rating_beta` → `eloundou_beta_gpt4`）为主、人工版（`human_rating_beta`）作稳健性检验，与原文的主次相反。
 - **代码层级。** 原始代码为 O*NET-SOC 2019 的 8 位代码，共 923 个。取前 7 个字符（如 `15-1252`）得到 SOC 2018 的 6 位代码，同一 6 位代码内的 8 位值取**不加权**算术平均，得到 798 个 6 位职业。
 
-**Felten, Raj & Seamans AIOE 系列**（同一脚本，数据为 `AIOE-Data/AIOE`）。
+**Felten, Raj & Seamans AIOE 系列**（同一脚本，数据为 `AIOE-Data/AIOE` 仓库；Felten, Raj & Seamans, 2021, 2023a, 2023b）。
 
-- **构造原理。** 依据原文（*SMJ* 2021），以 EFF 的 10 类 AI 应用进展指标为基础，通过众包调查评估每类应用与 52 项 O*NET 能力（abilities）的相关度，得到能力层面的 AI 暴露度。再按各能力在职业中的普遍性与重要性加权，汇总为职业暴露度（AIOE）。这部分构造引自原文，本仓库直接使用作者发布的职业层面数值。
-- **两个变体。** LM-AIOE（arXiv 2303.01157）只保留"语言建模"一类应用；图像生成 AIOE 只保留图像生成，作为与编程关联较弱的对照技术。AIOE 本身对应 LLM 之前的 AI 应用。
-- **代码转换。** 原始代码为 SOC 2010 的 6 位代码，共 774 个，按以下步骤转换：
-  1. 以 6 位代码匹配 O*NET 官方 2010→2019 对照表中的 O*NET-SOC 2010 代码（取前 7 个字符）；
+- **构造**（Felten et al., 2021，第 2.2.2–2.2.3 节，式 (1)–(2)；公式亦复述于 Felten et al., 2023a，第 3–5 页）。以电子前沿基金会（EFF）跟踪的 10 类 AI 应用为基础：抽象策略游戏、实时视频游戏、图像识别、视觉问答、图像生成、阅读理解、语言建模、翻译、语音识别、乐器音轨识别。通过 Amazon Mechanical Turk 众包调查得到每类应用 $i$ 与 52 项 O*NET 能力 $j$ 的相关度 $x_{ij}\in[0,1]$，再按能力在职业 $k$ 中的普遍性（prevalence/level，1–7 级）$L_{jk}$ 与重要性（importance，1–5 级）$I_{jk}$ 加权，两者经缩放后等权：
+
+$$
+A_{j}=\sum_{i=1}^{10}\alpha_i\,x_{ij},\qquad
+\mathrm{AIOE}_k=\frac{\sum_{j=1}^{52}A_{j}\,L_{jk}\,I_{jk}}{\sum_{j=1}^{52}L_{jk}\,I_{jk}} .
+$$
+
+  原文把能力层面暴露度记为 $A_{ij}$，实际已对 $i$ 求和；分母按职业全部能力的加权和归一化，避免能力项多的职业机械地得到高分。原文使用 O*NET 24.3（2020 年 5 月发布）。
+- **三个版本。**
+  - **AIOE**（2021）：$\alpha_i=1$，10 类应用等权，其中也包括语言建模；其依据是 LLM 普及之前的 AI 进展指标。
+  - **LM-AIOE**（2023a，式 (3)，第 5 页）：除语言建模外 $\alpha_i=0$；与原始 AIOE 的相关系数为 0.979。
+  - **图像生成 AIOE**：数据来自同一仓库的生成式 AI 补充文件，对应论文为 Felten et al.（2023b）。按仓库说明与该文摘要，它沿用同一方法、只保留图像生成应用；**该文正文未能获取，公式未逐式核对。** 本文以其作为与编程关联较弱的对照技术。
+- **代码转换。** 作者发布的职业分数以 6 位 SOC 代码索引（O*NET 24.3 采用 O*NET-SOC 2010 分类），共 774 个，按以下步骤转换：
+  1. 以 6 位代码匹配 O*NET 官方 2010→2019 对照表（National Center for O*NET Development, n.d.）中的 O*NET-SOC 2010 代码（取前 7 个字符）；
   2. 映射到 O*NET-SOC 2019，再截取为 6 位；
   3. 多对多映射的单元取不加权平均。
 
@@ -118,7 +137,7 @@ $$E_o = \frac{e_o - \bar e}{\mathrm{sd}(e)}$$
 
 #### 3.4.2 资历与"初级"（Revelio 标签口径）
 
-**Revelio 资历。** 为 1–7 级序数变量，定义见 3.1 的表格。据 Revelio 数据字典，它由基于职位标题、公司、行业的集成模型预测，招聘帖主要依据标题。模型本身为专有，本仓库无法复核其训练与版本更替。
+**Revelio 资历。** 为 1–7 级序数变量，模型与等级定义见 3.1。招聘帖资历的输入变量未见于 Revelio 文档（3.1 中的说明为推断）。模型本身为专有，本仓库无法复核其训练与版本更替。
 
 **分组。**
 - **初级（Early）** = 1–2 级；**资深（Experienced）** = 3–4 级；5–7 级（总监及以上）不进入三重差分。
@@ -157,7 +176,7 @@ $$E_o = \frac{e_o - \bar e}{\mathrm{sd}(e)}$$
 
 **定义。** $\mathrm{Junior}^{\mathrm{yoe}}=1[N\le 2]$，资深为 $N\ge 3$，解析规则同 3.4.2。
 
-**适用范围。** 该定义只对写明年限的帖子（约 51%）有定义。写明年限的帖子可能与未写明的帖子存在系统差异，例如前者更多来自大公司或标准化模板。本文目前只把它用于描述与效度对照，尚未用作回归结果变量。
+**适用范围。** 该定义只对写明年限的帖子（约 51%）有定义。写明年限的帖子可能与未写明的帖子存在系统差异，例如前者更多来自大公司或标准化模板。本文目前只把它用于描述与效度对照，尚未用作回归结果变量。作为对照，Westby et al.（2026，第 3.2 节）在 Lightcast 数据中以"要求 ≤3 年"为初级、"≥4 年"为资深，并剔除未写明年限的帖子；其阈值与本文（≤2 / ≥3）不同，比较量级时需注意。
 
 #### 3.4.4 职业范围
 
@@ -230,8 +249,8 @@ P2 把 li_plus 并入 other（`12_firm_panel_pull.py`）。"LinkedIn-only" 一�
 - 2023 年前已有此类帖子的 495 家公司被剔除。
 - **对照组**：其余 P2 公司。
 
-**与 HL 定义的差别。**
-- **识别方法。** Hosseini Maasoum & Lichtinger 先以生成式 AI 关键词标记招聘帖，再用 LLM 判断是否为真正的"生成式 AI 集成者"岗位，截至 2025 年 3 月识别出 10,599 家采用公司（约 28.5 万家公司中的 3.7%）。本文口径窄得多。
+**与 Hosseini Maasoum & Lichtinger（2025，HL）定义的差别。**
+- **识别方法。** HL（2025-10-06 版，第 3 节）先以生成式 AI 关键词（如 Copilot、Claude、Gemini、large language model、LLM、generative AI、ChatGPT）标记 2021 年 1 月至 2025 年 3 月的招聘帖，再用 LLM 分类器区分真正的"生成式 AI 集成者"岗位与仅使用 AI 工具的岗位，识别出 10,599 家采用公司（约占样本 28.5 万家公司的 3.7%）。本文口径窄得多。HL 在 SSRN 的最新修订为 2026-06-06，摘要中的样本描述改为 6,500 万名劳动者、28 万余家公司；新版采用公司数本文未核对。
 - **事件前即有此类岗位。** 此类角色在 2021–2022 年已有 1,448 和 2,600 条，说明 Revelio 的这一分类在 LLM 之前也收录了对话式或 NLP 类岗位。
 
 #### 3.4.8 入职（hires）
@@ -241,15 +260,15 @@ P2 把 li_plus 并入 other（`12_firm_panel_pull.py`）。"LinkedIn-only" 一�
 **定义。**
 - 一次"入职"指一条任职记录，其 `startdate` 落在季度 $t$（或月份）内，且 `country = 'United States'`。
 - 公司为记录的 `ultimate_parent_rcid`；职业为记录的 `onet_code`（截取为 6 位）。
-- 资历为 Revelio 对该任职记录预测的资历。理论上可利用履历信息，但同样为专有模型。
-- 计数使用 Revelio 抽样权重 `weight` 加总（"加权入职"），用以校正 LinkedIn 在职业与地区上的覆盖偏差。
+- 资历为 Revelio 对该任职记录预测的资历。据 Revelio 方法说明，可利用此前任职与年龄信息（3.1），但同样为专有模型。
+- 计数使用 Revelio 抽样权重 `weight` 加总（"加权入职"），用以校正在线档案在职业与国家上的代表性偏差（3.2）。
 
 **无法由代码确认的定义。** 同一公司内的晋升或换岗是否生成新的任职记录，取决于 Revelio 的履历切分规则。本文未区分外部入职与内部变动，这一点无法由本仓库代码确认。
 
 **滞后。** 履历更新存在滞后，加权入职总量在 2025Q4 为 240 万，而 2025Q3 为 433 万。因此入职分析截至 2025Q4，并应视最近几个季度为下限。
 
 **首份工作代理。**
-- **定义**：`first_job = 1[position_number = 1]`，即履历中的第一段任职。
+- **定义**：`first_job = 1[position_number = 1]`；数据字典把 `position_number` 定义为"该任职在用户档案中的时间顺序"（Revelio Labs, n.d.-b），因此即履历中的第一段任职。
 - **问题**：它包括实习、兼职与学生工作，且依赖个人填写的完整性，因此只是"22–25 岁"的弱代理。
 
 **样本门槛。** 职业层面要求基期每组加权入职不少于 200。
@@ -287,9 +306,9 @@ P2 把 li_plus 并入 other（`12_firm_panel_pull.py`）。"LinkedIn-only" 一�
 
 | 变量 | 定义 | 来源 | 已知效度问题 |
 |---|---|---|---|
-| $E_o$（主） | Eloundou β = E1 + 0.5·E2（GPT-4 评分）；核心任务权重为补充任务的 2 倍；8 位 → 6 位不加权平均；职业间不加权 z 标准化 | GPTs-are-GPTs `occ_level.csv` | 衡量潜在暴露而非实际采用；与其他白领度量相关 0.72–0.88，难以区分 LLM 与一般白领冲击 |
-| Felten AIOE / LM-AIOE / 图像 AIOE | 能力-应用关联加权；SOC 2010 → 2019 官方对照，多对多平均；z 标准化 | AIOE-Data | 能力层面较粗；前 LLM 时代的 AIOE 给出相同结果，安慰剂含义有限 |
-| 初级 / 资深（标签） | Revelio 资历 1–2 / 3–4 | `postings_cosmos.seniority`；`individual_positions.seniority` | 专有模型；对经验口径的衰减因子为 0.26；标签随时间漂移；2023 年 1–2 月 3 级尖峰；中国网站 2023 年重编码 |
+| $E_o$（主） | Eloundou β = E1 + 0.5·E2（GPT-4 直接按任务评分）；核心任务权重为补充任务的 2 倍；8 位 → 6 位不加权平均；职业间不加权 z 标准化 | GPTs-are-GPTs `occ_level.csv` | 衡量潜在暴露而非实际采用；与其他白领度量相关 0.72–0.88，难以区分 LLM 与一般白领冲击 |
+| Felten AIOE / LM-AIOE / 图像 AIOE | 应用-能力相关度之和，按 O*NET 能力普遍性×重要性加权平均（LM / 图像版只保留单一应用）；SOC 2010 → 2019 官方对照，多对多平均；z 标准化 | AIOE-Data | 能力层面较粗；等权的原始 AIOE 给出相同结果，安慰剂含义有限；图像版公式未逐式核对 |
+| 初级 / 资深（标签） | Revelio 资历 1–2 / 3–4 | `postings_cosmos.seniority`；`individual_positions.seniority` | 专有集成模型（标题/公司/行业、履历、年龄）；招聘帖输入未见文档；对经验口径的衰减因子为 0.26；标签随时间漂移；2023 年 1–2 月 3 级尖峰；中国网站 2023 年重编码 |
 | 初级（经验口径） | 描述中首个"N years … experience"的 N ≤ 2 | `postings_cosmos_raw.description`，1/200 抽样 | 仅 51% 有定义；首次提及偏误；未覆盖中文与其他语序 |
 | 计算机职业 / 狭义软件 | 15-12xx / 15-1252、15-1253、15-1254（软件哑变量为 15-1251..54） | `onet_code` | IT 支持等也在 15-12xx 内；职业由 Revelio 从标题映射 |
 | 技术栈 / 语言 / LLM 标签 | 标题或描述正则（见 3.4.5）；美国 1/50、中国 1/20 抽样 | `postings_cosmos_raw` | 度量"提及"；精度经小样本人工校验；中国页面需清洗；美国标题多为泛化名称 |
@@ -462,7 +481,7 @@ $\beta_1<0$ 表示 ChatGPT 之后，暴露度每高 1 个标准差，初级相�
 3. 同比口径下效应为零；
 4. 合并全部来源后，效应符号翻转。
 
-此外，Felten 的前 LLM 时代 AIOE 和图像生成 AIOE 给出相同答案。这说明暴露度度量捕捉的是更一般的"白领初级"冲击，例如 2022–23 年科技行业收缩和利率敏感性。
+此外，Felten et al.（2021）等权综合 10 类 AI 应用的原始 AIOE 和图像生成 AIOE（Felten et al., 2023b）给出相同答案。这说明暴露度度量捕捉的是更一般的"白领初级"冲击，例如 2022–23 年科技行业收缩和利率敏感性。
 
 ![Design A 事件研究](../figures/designA_1_event_us.png)
 
@@ -478,17 +497,17 @@ $$
 
 在平衡面板中，每个公司-职业-季度同时含有两个资历单元，因此公司×季度固定效应 $\lambda_{ft}$ 与三重交互项正交，不会改变估计。实质性的公司内控制是**公司×资历×季度**固定效应 $\lambda_{fst}$：它吸收公司整体的初级/资深结构变化，例如全公司冻结校招。
 
-事件研究的基期改为 2022Q3，以避开 2023 年初的标签尖峰。前趋势的稳健推断采用 Rambachan & Roth (2023) 的方法，考虑两类约束：
+事件研究的基期改为 2022Q3，以避开 2023 年初的标签尖峰。前趋势的稳健推断采用 Rambachan & Roth（2023）的方法，考虑两类约束（$\delta$ 为事件期 $t$ 的平行趋势偏离，$\delta_0$ 归一化为 0；相对幅度约束见原文第 2563 页，平滑性约束见第 2564 页式 (8)）：
 
 $$
-\Delta^{SD}(M)=\{\delta: |(\delta_{t+1}-\delta_t)-(\delta_t-\delta_{t-1})|\le M\},\qquad
-\Delta^{RM}(\bar M)=\{\delta: |\delta_{t+1}-\delta_t|\le \bar M\cdot \max_{s<0}|\delta_{s+1}-\delta_s|\}.
+\Delta^{SD}(M)=\{\delta: |(\delta_{t+1}-\delta_t)-(\delta_t-\delta_{t-1})|\le M,\ \forall t\},\qquad
+\Delta^{RM}(\bar M)=\{\delta: \forall t\ge 0,\ |\delta_{t+1}-\delta_t|\le \bar M\cdot \max_{s<0}|\delta_{s+1}-\delta_s|\}.
 $$
 
 - $M=0$ 表示前趋势严格线性延续；
 - $\bar M$ 表示事后偏离相对于事前最大偏离的倍数。
 
-计算使用 Python 版 `honestdid` 0.1.1，在本地修补了与 numpy 2 不兼容的问题，并用自写的闭式识别集交叉核对。
+计算使用 Python 版 `honestdid` 0.1.1（Quispe, n.d.；移植自 R 包 HonestDiD），在本地修补了与 numpy 2 不兼容的问题，并用自写的闭式识别集交叉核对。
 
 **结果：点估计。**
 
@@ -526,8 +545,8 @@ $$
 ### 4.7 数据局限还是真实结果：设计诊断
 
 **（1）功效与最小可检测效应（MDE）。** 以 $\mathrm{MDE}=2.80\times \mathrm{SE}$（80% 功效、5% 双侧）计算。顶端与底端五分位职业之间的暴露度差为 2.76 个标准差。把文献效应换算到"每标准差暴露度"的单位：
-- Brynjolfsson et al. 的 13% 约为 −0.050；
-- Hosseini Maasoum & Lichtinger 的 7.7%–10% 约为 −0.029 至 −0.038。
+- Brynjolfsson et al.（2025）2025 年 8 月版的 13%（控制企业冲击的回归估计）约为 −0.050；若改用 2026 年 8 月版的描述性缺口 19%，约为 −0.077；
+- HL（2025-10-06 版）的 7.7%（DiD）至约 10%（三重差分）约为 −0.029 至 −0.038。
 
 本文各设定的 MDE：
 
@@ -562,7 +581,7 @@ $$
 - **固定面板。** 11,029 家每个季度都在 LinkedIn 发帖的公司：只用其 LinkedIn 帖时 Post2 = +0.070 (0.018)，使用其全部来源时 Post2 = −0.113 (0.029)。
 - **判断。** Post2 的符号翻转是覆盖伪迹。前趋势在固定公司与来源后依然存在（χ² ≈ 100–150），并非公司进出所致。
 
-**（4）基准复现。** 仿照 Hosseini Maasoum & Lichtinger 的设计。以 Revelio 职位分类中的 "Generative AI Engineer / Conversational AI Engineer" 识别 1,066 家 2023Q1–2025Q1 的生成式 AI 采用公司（口径明显窄于原文，定义见 3.4.7）；结果变量分别为 P2 招聘帖和加权入职（3.4.8）。设定为
+**（4）基准复现。** 仿照 HL 的设计。以 Revelio 职位分类中的 "Generative AI Engineer / Conversational AI Engineer" 识别 1,066 家 2023Q1–2025Q1 的生成式 AI 采用公司（口径明显窄于原文，定义见 3.4.7）；结果变量分别为 P2 招聘帖和加权入职（3.4.8）。设定为
 
 $$
 \log(1+y_{fst}) = \beta\, A_f \mathrm{Junior}_s \mathrm{Post}_t + \lambda_{ft} + \mu_{fs} + \gamma_{st} + \varepsilon_{fst},
@@ -612,7 +631,7 @@ $$
    - 资历标签的衰减因子约为 0.26，且随时间漂移；
    - 来源构成剧烈变化，导致符号翻转；
    - 2021–22 年存在强前趋势，HonestDiD 区间在任何合理的 M 下都包含 0。
-3. **履历入职数据显示资历偏向的下降。** 2023 年下半年起，入职数据中出现按暴露度分级的初级下降：每标准差暴露度约 −0.07 对数点，到 2025Q3 约为 −0.14。前趋势平坦，且同一数据复现了 Hosseini Maasoum & Lichtinger 的采用公司结果（−0.12）。量级与 Brynjolfsson et al. 及 Hosseini Maasoum & Lichtinger 一致。
+3. **履历入职数据显示资历偏向的下降。** 2023 年下半年起，入职数据中出现按暴露度分级的初级下降：每标准差暴露度约 −0.07 对数点，到 2025Q3 约为 −0.14。前趋势平坦，且同一数据复现了 HL 的采用公司结果（−0.12）。量级与 Brynjolfsson et al.（2025）及 HL 一致；与 Humlum & Vestergaard（2025）在丹麦收入与工时上的零效应并不矛盾，因为结果变量（入职流量 vs. 存量收入与工时）和样本不同。
 
 ### 5.2 不能主张的结论
 
@@ -635,23 +654,41 @@ $$
 2. **基于经验年限的初级定义。** 扩大 P4 抽样，把"要求 ≤2 年"作为招聘端的替代初级定义，并用于主回归。
 3. **固定来源面板。** 招聘帖分析只在固定来源、固定公司面板中进行，并加入来源×资历×时间固定效应。
 4. **竞争性解释检验。** 利用研发强度、利率敏感性和受 Section 174 影响的行业差异做安慰剂与异质性检验；在白领职业内部比较高、低 LLM 暴露度。
-5. **公司 AI 采用度量（P3）。** 从职位描述中构建公司层面的 AI 工具提及度（Copilot、Cursor、Claude Code 等），并经人工校验精度与召回，用于交错采用的事件研究（Callaway–Sant'Anna / Sun–Abraham）。设计草稿见 `docs/p3_firm_ai_adoption_sketch.md`。
+5. **公司 AI 采用度量（P3）。** 从职位描述中构建公司层面的 AI 工具提及度（Copilot、Cursor、Claude Code 等），并经人工校验精度与召回，用于交错采用的事件研究（Callaway & Sant'Anna, 2021；Sun & Abraham, 2021）。设计草稿见 `docs/p3_firm_ai_adoption_sketch.md`。
 
 ---
 
-## 参考文献（含发表状态）
+## 参考文献
 
-- Brynjolfsson, E., Chandar, B., & Chen, R. "Canaries in the Coal Mine? Six Facts about the Recent Employment Effects of Artificial Intelligence." Stanford Digital Economy Lab / SIEPR 工作论文，2025 年 8 月，2026 年 8 月更新。**未经同行评审。** [SIEPR](https://siepr.stanford.edu/publications/working-paper/canaries-coal-mine-six-facts-about-recent-employment-effects-artificial)；[2026 更新版 PDF](https://digitaleconomy.stanford.edu/app/uploads/2026/08/Canaries_August2026.pdf)
-- Hosseini Maasoum, S. M., & Lichtinger, G. "Generative AI as Seniority-Biased Technological Change: Evidence from U.S. Résumé and Job Posting Data." SSRN 5425555，2025。**工作论文。** [SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5425555)
-- Westby, Modestino & Cheng. "Generative AI and the Redefinition of Entry-Level Software Work." IZA DP 18723，2026。**工作论文。** [IZA](https://docs.iza.org/dp18723.pdf)
-- Humlum, A., & Vestergaard, E. "Large Language Models, Small Labor Market Effects." NBER w33777。**工作论文。** [NBER](https://www.nber.org/papers/w33777)
-- Hampole, Papanikolaou, Schmidt & Seegmiller. "Artificial Intelligence and the Labor Market." NBER w33509。**工作论文。** [NBER](https://www.nber.org/papers/w33509)
-- Liu, Wang & Yu. "Labor Demand in the Age of Generative AI." World Bank PRWP 11263。**工作论文。** [doi](https://doi.org/10.1596/1813-9450-11263)
-- Eloundou, T., Manning, S., Mishkin, P., & Rock, D. "GPTs are GPTs." *Science* 384 (2024)。**同行评审。** [doi](https://doi.org/10.1126/science.adj0998)
-- Felten, E., Raj, M., & Seamans, R. AIOE, *Strategic Management Journal* 42(12) (2021)。**同行评审。** [doi](https://doi.org/10.1002/smj.3286)
-- Felten, Raj & Seamans. LM-AIOE, arXiv 2303.01157 (2023)。**预印本。** [arXiv](https://arxiv.org/abs/2303.01157)
-- Webb, M. "The Impact of Artificial Intelligence on the Labor Market." SSRN 3482150。**工作论文**（数据未公开，未使用）。[SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3482150)
-- Rambachan, A., & Roth, J. (2023). "A More Credible Approach to Parallel Trends." *Review of Economic Studies*, 90(5), 2555–2591. [doi:10.1093/restud/rdad018](https://doi.org/10.1093/restud/rdad018)。**同行评审。**
+正文采用作者-年份引用；同一作者同年多篇以 a、b 区分。"状态"一栏注明是否经同行评审。所有链接均于 2026-10-18 核验：DOI 均能解析到对应出版方页面；*Science*、Wiley、OUP 与 SSRN 页面对自动请求返回 403，但 DOI 重定向目标正确，且已通过其他途径（出版方摘要页、Crossref 元数据或作者公开 PDF）核对题录。
+
+**论文**
+
+- Brynjolfsson, E., Chandar, B., & Chen, R. (2025). *Canaries in the coal mine? Six facts about the recent employment effects of artificial intelligence* [Working paper]. Stanford Digital Economy Lab / SIEPR. 首版 2025 年 8 月；本文另引 2026 年 8 月更新版。**状态：工作论文，未经同行评审。** https://siepr.stanford.edu/publications/working-paper/canaries-coal-mine-six-facts-about-recent-employment-effects-artificial ；2026 年 8 月版：https://digitaleconomy.stanford.edu/app/uploads/2026/08/Canaries_August2026.pdf
+- Callaway, B., & Sant'Anna, P. H. C. (2021). Difference-in-differences with multiple time periods. *Journal of Econometrics*, 225(2), 200–230. https://doi.org/10.1016/j.jeconom.2020.12.001 **状态：同行评审。**
+- Eloundou, T., Manning, S., Mishkin, P., & Rock, D. (2023). *GPTs are GPTs: An early look at the labor market impact potential of large language models* (arXiv:2303.10130v5, 2023-08-21). https://doi.org/10.48550/arXiv.2303.10130 **状态：预印本。** 职业层面数据：OpenAI (n.d.)。
+- Eloundou, T., Manning, S., Mishkin, P., & Rock, D. (2024). GPTs are GPTs: Labor market impact potential of LLMs. *Science*, 384(6702), 1306–1308. https://doi.org/10.1126/science.adj0998 **状态：同行评审。**
+- Felten, E., Raj, M., & Seamans, R. (2021). Occupational, industry, and geographic exposure to artificial intelligence: A novel dataset and its potential uses. *Strategic Management Journal*, 42(12), 2195–2217. https://doi.org/10.1002/smj.3286 **状态：同行评审。** 数据：https://github.com/AIOE-Data/AIOE
+- Felten, E., Raj, M., & Seamans, R. (2023a). *How will language modelers like ChatGPT affect occupations and industries?* (arXiv:2303.01157v2). https://doi.org/10.48550/arXiv.2303.01157 **状态：预印本。**
+- Felten, E. W., Raj, M., & Seamans, R. (2023b). *Occupational heterogeneity in exposure to generative AI* (SSRN Working Paper No. 4414065). https://doi.org/10.2139/ssrn.4414065 **状态：工作论文。** 本文只核对了摘要与数据仓库说明，正文未获取。
+- Hampole, M., Papanikolaou, D., Schmidt, L. D. W., & Seegmiller, B. (2025). *Artificial intelligence and the labor market* (NBER Working Paper No. 33509). National Bureau of Economic Research. https://doi.org/10.3386/w33509 **状态：工作论文。**
+- Hosseini Maasoum, S. M., & Lichtinger, G. (2025). *Generative AI as seniority-biased technological change: Evidence from U.S. résumé and job posting data* (SSRN Working Paper No. 5425555). https://doi.org/10.2139/ssrn.5425555 **状态：工作论文。** 本文数值核对自 2025-10-06 版；SSRN 最新修订为 2026-06-06。
+- Humlum, A., & Vestergaard, E. (2025). *Still waters, rapid currents: Early labor market transformation under generative AI* (NBER Working Paper No. 33777). National Bureau of Economic Research. https://doi.org/10.3386/w33777 **状态：工作论文。** 曾以 "Large Language Models, Small Labor Market Effects" 为题发布。
+- Liu, Y., Wang, H., & Yu, S. (2025). *Labor demand in the age of generative AI: Early evidence from the U.S. job posting data* (Policy Research Working Paper No. 11263). World Bank. https://doi.org/10.1596/1813-9450-11263 **状态：工作论文。**
+- Rambachan, A., & Roth, J. (2023). A more credible approach to parallel trends. *Review of Economic Studies*, 90(5), 2555–2591. https://doi.org/10.1093/restud/rdad018 **状态：同行评审。**
+- Sun, L., & Abraham, S. (2021). Estimating dynamic treatment effects in event studies with heterogeneous treatment effects. *Journal of Econometrics*, 225(2), 175–199. https://doi.org/10.1016/j.jeconom.2020.09.006 **状态：同行评审。**
+- Webb, M. (2019). *The impact of artificial intelligence on the labor market* (SSRN Working Paper No. 3482150). https://doi.org/10.2139/ssrn.3482150 **状态：工作论文。** 本文未使用其数据。
+- Westby, S., Modestino, A. S., & Cheng, P. (2026). *Generative AI and the redefinition of entry-level software work* (IZA Discussion Paper No. 18723). IZA@LISER. https://docs.iza.org/dp18723.pdf **状态：工作论文。**
+
+**数据文档、数据仓库与软件**
+
+- LinkedIn. (2023). *InCareer discontinuation: Important information*. LinkedIn Help. https://www.linkedin.com/help/linkedin/answer/a534125
+- National Center for O*NET Development. (n.d.). *Crosswalk 2010 to 2019*. O*NET Resource Center. https://www.onetcenter.org/taxonomy/2019/walk.html
+- OpenAI. (n.d.). *GPTs-are-GPTs* [Data repository]. GitHub. https://github.com/openai/GPTs-are-GPTs
+- Quispe, A. (n.d.). *honestdid* (Version 0.1.1) [Python software; port of the R package HonestDiD, https://github.com/asheshrambachan/HonestDiD]. GitHub. https://github.com/anzonyquispe/honestdid
+- Revelio Labs. (n.d.-a). *Methodologies*. Revelio Labs Data Dictionary. https://www.data-dictionary.reveliolabs.com/methodology.html
+- Revelio Labs. (n.d.-b). *Datasets*. Revelio Labs Data Dictionary. https://www.data-dictionary.reveliolabs.com/data.html
+- Revelio Labs. (n.d.-c). *FAQs*. Revelio Labs Data Dictionary. https://www.data-dictionary.reveliolabs.com/faq.html
 
 ## 附：代码与文档索引
 
