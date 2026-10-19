@@ -948,7 +948,7 @@ xf 定义的事件研究系数：2023H1 +0.015 (0.008)，2023H2 +0.015 (0.005)�
 | Design A（职业层面） | `09_occ_panel_pull.py`、`10_designA.py`；`docs/designA_results.md` |
 | 公司 FE 与 HonestDiD | `11`–`13` 脚本、`tools/honest_bounds.py`；`docs/designA_firmFE_results.md` |
 | 设计诊断 | `14_diagnostics.py`、`15`–`17` 脚本；`docs/data_vs_result_diagnosis.md`、`docs/diag_*.md` |
-| 公司×职业招聘帖–入职比较（4.8） | `18_firm_occ_hires_pull.py`、`19_gap_postings_half.py`、`22_gap_analysis.py`；`docs/explore_gap_uscn.md` A、`docs/explore_gap_tables.md` |
-| 中美比较（4.10） | `20_tags_by_source_pull.py`、`21_exp_req_pull.py`、`23_uscn_analysis.py`；`docs/explore_gap_uscn.md` B、`docs/explore_uscn_tables.md` |
-| 经验口径初级与外部入职（4.9） | `24_hires_exp_pull.py`、`25_exp_junior_analysis.py`、`tools/run_after_pull.sh`；`docs/explore_experience_junior.md`、`docs/explore_experience_junior_tables.md`（第 2 版 1/20 抽样）；1/5 抽样表格 `outputs/explore/expj_tables_m5.md`（git-ignored） |
+| 公司×职业招聘帖–入职比较（4.8） | `18_firm_occ_hires_pull.py`、`19_gap_postings_half.py`、`22_gap_analysis.py`；`docs/explore_gap_uscn.md` A、`outputs/explore/tables/explore_gap_tables.md`（本地，不入库） |
+| 中美比较（4.10） | `20_tags_by_source_pull.py`、`21_exp_req_pull.py`、`23_uscn_analysis.py`；`docs/explore_gap_uscn.md` B、`outputs/explore/tables/explore_uscn_tables.md`（本地，不入库） |
+| 经验口径初级与外部入职（4.9） | `24_hires_exp_pull.py`、`25_exp_junior_analysis.py`、`tools/run_after_pull.sh`；`docs/explore_experience_junior.md`、`outputs/explore/tables/explore_experience_junior_tables.md`（本地，不入库）（第 2 版 1/20 抽样）；1/5 抽样表格 `outputs/explore/expj_tables_m5.md`（git-ignored） |
 | 研究设计备忘 | `docs/did_design.md`；`docs/exposure.md` |

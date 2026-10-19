@@ -1,7 +1,7 @@
 # 探索 A（招聘帖–入职差距）与探索 B（中美对比）
 
 代码：`18_firm_occ_hires_pull.py`、`19_gap_postings_half.py`、`22_gap_analysis.py`（A）；`20_tags_by_source_pull.py`、`21_exp_req_pull.py`、`23_uscn_analysis.py`（B）。
-完整生成表：`docs/explore_gap_tables.md`、`docs/explore_uscn_tables.md`。图：`docs/figures/gap_*.png`、`docs/figures/uscn_*.png`（只含回归系数或国家层面汇总，不含公司层面数据）。
+完整生成表：`outputs/explore/tables/explore_gap_tables.md`（本地，不入库）、`outputs/explore/tables/explore_uscn_tables.md`（本地，不入库）。图：`docs/figures/gap_*.png`、`docs/figures/uscn_*.png`（只含回归系数或国家层面汇总，不含公司层面数据）。
 数据都在 git-ignored 的 `data/`（`data/hires_fo`、`data/explore`、`data/expreq`、`data/tags_src`）里，没有提交。
 
 **一句话结论。**
@@ -100,7 +100,7 @@
 
 ## B. 中美对比
 
-### B.1 中国数据断点（全部职业，单位：千条，详见 `explore_uscn_tables.md` B1；图 `uscn_1_coverage.png`）
+### B.1 中国数据断点（全部职业，单位：千条，详见 `outputs/explore/tables/explore_uscn_tables.md`（本地，不入库） B1；图 `uscn_1_coverage.png`）
 
 | 半年 | 中国 本土招聘网站 | 中国 只有 LinkedIn | 中国 other | 美国 只有 LinkedIn | 美国 LinkedIn+其他 | 美国 other |
 |---|---|---|---|---|---|---|

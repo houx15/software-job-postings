@@ -1,6 +1,6 @@
 # AI 暴露度是否专门冲击初级？基于工作年限的初级定义 + 外部入职
 
-代码：`24_hires_exp_pull.py`（WRDS 服务端汇总）、`25_exp_junior_analysis.py`（估计）、`tools/run_after_pull.sh`。生成表：`docs/explore_experience_junior_tables.md`。图：`docs/figures/expj_1_triple_defs.png`、`docs/figures/expj_2_lag.png`（只含系数）。数据在 git-ignored 的 `data/hires_exp/`、`data/explore/`。
+代码：`24_hires_exp_pull.py`（WRDS 服务端汇总）、`25_exp_junior_analysis.py`（估计）、`tools/run_after_pull.sh`。生成表：`outputs/explore/tables/explore_experience_junior_tables.md`（本地，不入库）。图：`docs/figures/expj_1_triple_defs.png`、`docs/figures/expj_2_lag.png`（只含系数）。数据在 git-ignored 的 `data/hires_exp/`、`data/explore/`。
 
 **一句话结论。** 在同一公司、同一职业、同一半年内比较外部入职，用工作年限（距第一份工作或距最后一次毕业 < 3 年）定义的初级，在 AI 暴露度高的职业里**没有**相对经验者下降；相对地，是**经验者的外部入职**下降了（每 SD −0.024 (0.008)）。三重差分 E×初级×Post 为 **+0.027 (0.010)**（距第一份工作）和 **+0.034 (0.007)**（距毕业），符号与"AI 专门冲击初级"相反。用 Revelio 职级 1–2 定义则为 −0.005 (0.008)，也不是负的。2023H1–2024H2 这几期（受简历滞后影响较小）的系数在 −0.000 到 +0.035 之间，95% CI 下界最低约 −0.022：**可以排除"初级外部入职相对下降超过约 2%/SD"**。2025 年系数更大（+0.07 至 +0.10），但这几期的新进入者数据严重缺失（见 §4），不可信。
 
@@ -103,7 +103,7 @@ Revelio "初级"（1–2 级）里只有约三分之一是工作不到 3 年的�
   - 只要允许 M ≥ 0.5 × 最大二阶差分（0.013），区间就变成 [−0.149, 0.129]。
   - 相对幅度 RM，M̄ = 0.5：[−0.036, 0.087]；M̄ = 1：[−0.090, 0.141]。
   - 也就是说，在非常温和的偏离平行趋势之下，正效应就不再显著，但区间同样不支持大的负效应（M̄ = 0.5 时下界 −0.036）。
-- HonestDiD（距毕业定义；最大二阶差分 = 0.023）：原始 CI，avg 2023H1–2025H1 为 [0.012, 0.047]；M = 0 为 [0.032, 0.062]；M = 0.011 为 [−0.124, 0.135]；RM M̄ = 0.5 为 [−0.023, 0.084]，M̄ = 1 为 [−0.069, 0.131]。2024H1 的 RM M̄ = 0.5 为 [−0.019, 0.091]。完整表见 `docs/explore_experience_junior_tables.md` §5。
+- HonestDiD（距毕业定义；最大二阶差分 = 0.023）：原始 CI，avg 2023H1–2025H1 为 [0.012, 0.047]；M = 0 为 [0.032, 0.062]；M = 0.011 为 [−0.124, 0.135]；RM M̄ = 0.5 为 [−0.023, 0.084]，M̄ = 1 为 [−0.069, 0.131]。2024H1 的 RM M̄ = 0.5 为 [−0.019, 0.091]。完整表见 `outputs/explore/tables/explore_experience_junior_tables.md`（本地，不入库） §5。
 
 ## 6. 可信度判断
 

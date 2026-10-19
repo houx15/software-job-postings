@@ -27,3 +27,6 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 .env
+docs/explore_experience_junior_tables.md
+docs/explore_gap_tables.md
+docs/explore_uscn_tables.md
